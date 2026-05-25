@@ -8,19 +8,21 @@
 </head>
 <body>
   <div class="container">
-    <h1>🤖 Voice AI</h1>
-    <p id="status">Click the mic and ask me anything...</p>
+    <div class="header">
+      <h1>Voice AI</h1>
+      <button id="theme-toggle">🌙</button>
+    </div>
+    
+    <p id="status">Click mic and speak your question</p>
 
     <div class="mic-container">
       <button id="mic-btn">🎤</button>
     </div>
 
     <div class="input-area">
-      <input type="text" id="text-input" placeholder="Or type your question here...">
-      <button id="send-btn">Send</button>
+      <input type="text" id="text-input" placeholder="Type your question...">
+      <button id="send-btn">→</button>
     </div>
-
-    <p class="note">AI will reply with voice only</p>
   </div>
 
   <script src="script.js"></script>
