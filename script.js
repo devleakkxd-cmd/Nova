@@ -4,13 +4,11 @@ const sendBtn = document.getElementById('send-btn');
 const status = document.getElementById('status');
 const themeToggle = document.getElementById('theme-toggle');
 
+const API_KEY = "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";
+const API_URL = "https://api.openai.com/v1/chat/completions";
+
 let isListening = false;
 let recognition;
-
-// ================== PUT YOUR API HERE ==================
-const API_KEY = "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";        // ← Change this
-const API_URL = "https://api.openai.com/v1/chat/completions"; // Change if using Grok/Gemini
-// =======================================================
 
 // Theme Toggle
 let isDark = true;
@@ -34,21 +32,21 @@ if ('SpeechRecognition' in window || 'webkitSpeechRecognition' in window) {
   };
 
   recognition.onerror = () => {
-    status.textContent = "Couldn't hear clearly. Try again.";
+    status.textContent = "Couldn't hear you. Try again.";
     micBtn.classList.remove('listening');
   };
 }
 
-// Mic Click
+// Mic Button
 micBtn.addEventListener('click', () => {
   if (recognition) {
     recognition.start();
     micBtn.classList.add('listening');
-    status.textContent = "Listening...";
+    status.textContent = "Listening... Speak now";
   }
 });
 
-// Send Text
+// Send Button
 sendBtn.addEventListener('click', () => {
   const q = textInput.value.trim();
   if (q) {
@@ -62,7 +60,7 @@ textInput.addEventListener('keypress', e => {
   if (e.key === "Enter") sendBtn.click();
 });
 
-// Real AI Call
+// Call OpenAI API
 async function getAIResponse(question) {
   status.textContent = "AI is thinking...";
 
@@ -74,30 +72,30 @@ async function getAIResponse(question) {
         "Authorization": `Bearer ${API_KEY}`
       },
       body: JSON.stringify({
-        model: "gpt-4o-mini",           // Change model if needed
+        model: "gpt-4o-mini",
         messages: [{ role: "user", content: question }],
         temperature: 0.7
       })
     });
 
     const data = await res.json();
-    const reply = data.choices[0].message.content;
+    const reply = data.choices[0].message.content.trim();
 
-    speak(reply);   // Voice reply only
+    speak(reply);
   } catch (err) {
-    status.textContent = "Error connecting to AI. Check API key.";
+    status.textContent = "Error with API. Check your key or internet.";
     console.error(err);
   }
 }
 
-// Text to Speech
+// Text to Speech (AI Voice Reply)
 function speak(text) {
   if ('speechSynthesis' in window) {
     const utterance = new SpeechSynthesisUtterance(text);
-    utterance.rate = 1.0;
-    utterance.pitch = 1.05;
-    status.textContent = "AI Speaking...";
+    utterance.rate = 1.05;
+    utterance.pitch = 1.0;
     
+    status.textContent = "AI is speaking...";
     window.speechSynthesis.speak(utterance);
 
     utterance.onend = () => {
