@@ -2,95 +2,106 @@ const micBtn = document.getElementById('mic-btn');
 const textInput = document.getElementById('text-input');
 const sendBtn = document.getElementById('send-btn');
 const status = document.getElementById('status');
+const themeToggle = document.getElementById('theme-toggle');
 
 let isListening = false;
 let recognition;
 
-// Check if browser supports speech recognition
+// ================== PUT YOUR API HERE ==================
+const API_KEY = "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";        // ← Change this
+const API_URL = "https://api.openai.com/v1/chat/completions"; // Change if using Grok/Gemini
+// =======================================================
+
+// Theme Toggle
+let isDark = true;
+themeToggle.addEventListener('click', () => {
+  isDark = !isDark;
+  document.body.classList.toggle('dark', isDark);
+  document.body.classList.toggle('light', !isDark);
+  themeToggle.textContent = isDark ? '☀️' : '🌙';
+});
+
+// Speech Recognition
 if ('SpeechRecognition' in window || 'webkitSpeechRecognition' in window) {
   const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
   recognition = new SpeechRecognition();
-  recognition.continuous = false;
   recognition.lang = 'en-US';
 
-  recognition.onresult = (event) => {
-    const userQuestion = event.results[0][0].transcript;
-    status.textContent = `You said: "${userQuestion}"`;
-    getAIResponse(userQuestion);
+  recognition.onresult = (e) => {
+    const question = e.results[0][0].transcript;
+    status.textContent = `You: ${question}`;
+    getAIResponse(question);
   };
 
   recognition.onerror = () => {
-    status.textContent = "Sorry, I couldn't hear you. Try again.";
+    status.textContent = "Couldn't hear clearly. Try again.";
     micBtn.classList.remove('listening');
-    isListening = false;
   };
-} else {
-  status.textContent = "Your browser doesn't support voice input.";
 }
 
-// Mic Button
+// Mic Click
 micBtn.addEventListener('click', () => {
-  if (!recognition) return;
-  
-  if (!isListening) {
+  if (recognition) {
     recognition.start();
-    isListening = true;
     micBtn.classList.add('listening');
-    status.textContent = "Listening... Speak now";
+    status.textContent = "Listening...";
   }
 });
 
-// Send text question
+// Send Text
 sendBtn.addEventListener('click', () => {
-  const question = textInput.value.trim();
-  if (question) {
-    status.textContent = `You: ${question}`;
-    getAIResponse(question);
+  const q = textInput.value.trim();
+  if (q) {
+    status.textContent = `You: ${q}`;
+    getAIResponse(q);
     textInput.value = '';
   }
 });
 
-textInput.addEventListener('keypress', (e) => {
-  if (e.key === 'Enter') sendBtn.click();
+textInput.addEventListener('keypress', e => {
+  if (e.key === "Enter") sendBtn.click();
 });
 
-// Fake AI Response (You can replace this with real AI later)
+// Real AI Call
 async function getAIResponse(question) {
-  status.textContent = "Thinking...";
-  
-  // Simulate thinking time
-  await new Promise(resolve => setTimeout(resolve, 800));
+  status.textContent = "AI is thinking...";
 
-  // Simple responses (Replace with real AI API later)
-  let reply = "I'm sorry, I don't understand that yet.";
+  try {
+    const res = await fetch(API_URL, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${API_KEY}`
+      },
+      body: JSON.stringify({
+        model: "gpt-4o-mini",           // Change model if needed
+        messages: [{ role: "user", content: question }],
+        temperature: 0.7
+      })
+    });
 
-  const lowerQ = question.toLowerCase();
-  
-  if (lowerQ.includes("hello") || lowerQ.includes("hi")) reply = "Hello! How can I help you today?";
-  else if (lowerQ.includes("how are you")) reply = "I'm doing great, thank you for asking!";
-  else if (lowerQ.includes("name")) reply = "I'm your Voice AI Assistant. Nice to meet you!";
-  else if (lowerQ.includes("weather")) reply = "I can't check real weather yet, but I hope it's sunny where you are!";
-  else reply = `You asked: ${question}. This is a voice reply.`;
+    const data = await res.json();
+    const reply = data.choices[0].message.content;
 
-  // Speak the reply
-  speak(reply);
+    speak(reply);   // Voice reply only
+  } catch (err) {
+    status.textContent = "Error connecting to AI. Check API key.";
+    console.error(err);
+  }
 }
 
-// Text-to-Speech Function
+// Text to Speech
 function speak(text) {
   if ('speechSynthesis' in window) {
     const utterance = new SpeechSynthesisUtterance(text);
-    utterance.rate = 0.95;
+    utterance.rate = 1.0;
     utterance.pitch = 1.05;
-    utterance.volume = 1;
+    status.textContent = "AI Speaking...";
     
-    status.textContent = "AI is speaking...";
     window.speechSynthesis.speak(utterance);
-    
+
     utterance.onend = () => {
       status.textContent = "Ask me anything...";
     };
-  } else {
-    status.textContent = "Voice not supported in this browser.";
   }
 }
